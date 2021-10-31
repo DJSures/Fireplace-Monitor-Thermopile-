@@ -1,5 +1,5 @@
-# Fireplace-Monitor-Thermopile-
-This uses an Hetec Wifi Kit 32, speaker on the DAC, and ADC connected to fireplace thermopile. It will monitor a fireplace pilot light and notify your phone with push notifications and an audible alarm.
+# Propane-Fireplace-Monitor-Thermopile
+This uses an Hetec Wifi Kit 32, speaker on the DAC, and ADC connected to propane or gas fireplace thermopile. It will monitor a gas or propane fireplace pilot light and notify your phone with push notifications and an audible alarm.
 
 Edit the Arduino project INO file to see the #defines. You can configure your WiFi settings and PushOver token/user key information. 
 
