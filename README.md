@@ -1,6 +1,10 @@
 # Propane-Fireplace-Monitor-Thermopile
 This uses an Hetec Wifi Kit 32, speaker on the DAC, and ADC connected to propane or gas fireplace thermopile. It will monitor a gas or propane fireplace pilot light and notify your phone with push notifications and an audible alarm.
 
+![Push notification example](https://github.com/DJSures/Propane-Fireplace-Monitor-Thermopile/blob/main/Images/IMG_7087.PNG?raw=true)
+
+![In case operating](https://github.com/DJSures/Propane-Fireplace-Monitor-Thermopile/blob/main/Images/IMG_7090.jpg?raw=true)
+
 Edit the Arduino project INO file to see the #defines. You can configure your WiFi settings and PushOver token/user key information. 
 
    1) Choose the wifi mode by uncomment AP_MODE or not
@@ -12,3 +16,4 @@ Edit the Arduino project INO file to see the #defines. You can configure your Wi
    7) Edit the #defines below
 
 There's 3D printed case for the Heltect display and speaker. I used a small speaker and amplifier.
+
