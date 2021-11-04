@@ -7,8 +7,9 @@
    2) Enter the SSID/PWD for either AP or Client mode
    3) Connect the Pilot voltage to A7 (pin 35)
    4) Connect the heat voltage (optional) to A6 (pin 34)
-   5) Get USER Key and API Token from https://pushover.net/api
-   6) Edit the #defines below
+   5) Connect speaker to pin 26 and the other speaker wire to GND
+   6) Get USER Key and API Token from https://pushover.net/api
+   7) Edit the #defines below
 */
 
 // ----------------------------------------------------------------
@@ -32,15 +33,16 @@
 // This requires #define AP_MODE to be commented
 // Client mode means the ESP32 will connect to your router and you will have to know its IP Address
 // Or, you can check the USB serial debug output
-#define WIFI_CLIENT_SSID "myHomeSSID"
-#define WIFI_CLIENT_PWD  "myPassword"
+#define WIFI_CLIENT_SSID "macds"
+#define WIFI_CLIENT_PWD  "robule"
 
 // PushOver credentials.
-#define PUSH_OVER_API_TOKEN "akud4a9jasdfjs7hmt2a"
-#define PUSH_OVER_USER_KEY "urn2q3sewrsagasdfkkg52d"
+#define PUSH_OVER_API_TOKEN "akud4a9jjs7hmronzepha"
+#define PUSH_OVER_USER_KEY "urxgxvnz5cy7kkg52d"
 
 // Push Notification Title
 #define PUSH_TITLE "Camp Fireplace"
+#define PUSH_TITLE_ALARM "Camp Fireplace ALERT"
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -73,9 +75,9 @@ String         _externalIP     = "n/a";
 Pushover       _pushoverClient(PUSH_OVER_API_TOKEN, PUSH_OVER_USER_KEY);
 
 unsigned long  _lastScreenUpdate   = 0;
-long           _lastPushNotifyTime = 0;
-long           _lastLocalAlarmTime = 0;
-long           _lastHeartBeatAlarm = 0;
+unsigned long  _lastPushNotifyTime = 0;
+unsigned long  _lastLocalAlarmTime = 0;
+unsigned long  _lastHeartBeatAlarm = 0;
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -140,7 +142,7 @@ void Playsound_pilot_light_alarm() {
     delay(25);
   }
 
-  for (long i = 0; i < sound_pilot_light_alarm_Size; i++) {
+  for (unsigned long i = 0; i < sound_pilot_light_alarm_Size; i++) {
 
     dacWrite(26, sound_pilot_light_alarm[i]);
 
@@ -152,7 +154,7 @@ void Playsound_pilot_light_alarm() {
 
 void Playsound_starting_up() {
 
-  for (long i = 0; i < sound_starting_up_Size; i++) {
+  for (unsigned long i = 0; i < sound_starting_up_Size; i++) {
 
     dacWrite(26, sound_starting_up[i]);
 
@@ -172,6 +174,10 @@ void notify(String msg) {
   myMessage.title = PUSH_TITLE;
   myMessage.message = msg.c_str();
 
+  String url = "http://" + WiFi.localIP().toString();
+  myMessage.url = url.c_str();
+  myMessage.url_title = "Live Data";
+
   _pushoverClient.send(myMessage);
 }
 
@@ -182,9 +188,13 @@ void notifyAlarm(String msg) {
 
   PushoverMessage myMessage;
 
-  myMessage.title = PUSH_TITLE;
+  myMessage.title = PUSH_TITLE_ALARM;
   myMessage.message = msg.c_str();
   myMessage.sound = "spacealarm";
+
+  String url = "http://" + WiFi.localIP().toString();
+  myMessage.url = url.c_str();
+  myMessage.url_title = "Live Data";
 
   _pushoverClient.send(myMessage);
 }
@@ -213,18 +223,21 @@ String wl_status_to_string(wl_status_t status) {
   }
 }
 
-String getTimeFormatted(int ms) {
+String getTimeFormatted(unsigned long ms) {
 
-  long secs = ms / 1000; // set the seconds remaining
-  long mins = secs / 60; //convert seconds to minutes
-  long hours = mins / 60; //convert minutes to hours
-  long days = hours / 24; //convert hours to days
+  unsigned long secs = ms / 1000; // set the seconds remaining
+  unsigned long mins = secs / 60; //convert seconds to minutes
+  unsigned long hours = mins / 60; //convert minutes to hours
+  unsigned long days = hours / 24; //convert hours to days
 
   secs = secs - (mins * 60); //subtract the coverted seconds to minutes in order to display 59 secs max
   mins = mins - (hours * 60); //subtract the coverted minutes to hours in order to display 59 minutes max
   hours = hours - (days * 24); //subtract the coverted hours to days in order to display 23 hours max
 
-  return "Uptime: " + String(days) + " days " + String(hours) + ":" + String(mins) + ":" + String(secs);
+  if (days > 0)
+    return String(days) + " days " + String(hours) + ":" + String(mins) + ":" + String(secs);
+
+  return String(hours) + ":" + String(mins) + ":" + String(secs);
 }
 
 void setup() {
@@ -355,7 +368,7 @@ void loop() {
     // limit push alarm to every 5 minutes
     if (millis() > _lastPushNotifyTime + 300000) {
 
-      notifyAlarm("Pilot light is out!");
+      notifyAlarm("ALERT Pilot light is out!");
 
       _lastPushNotifyTime = millis();
     }
@@ -365,7 +378,7 @@ void loop() {
   if (millis() > _lastHeartBeatAlarm + 3600000) {
 
     if (_pilotStatus)
-      notify("Pilot: ON (" + String(_pilotVoltage * 0.0008056640625) + "v " + String(_pilotVoltage) + ")");
+      notify("Pilot: ON (" + String(_pilotVoltage * 0.0008056640625) + "v " + String(_pilotVoltage) + ") " + getTimeFormatted(millis() - _lastLocalAlarmTime));
     else
       notify("Pilot: OFF (" + String(_pilotVoltage * 0.0008056640625) + "v " + String(_pilotVoltage) + ")");
 
@@ -403,7 +416,9 @@ void loop() {
 
     Heltec.display->drawString(0, 36, "WiFi: " + wl_status_to_string(WiFi.status()));
 
-    Heltec.display->drawString(0, 45, getTimeFormatted(millis()));
+    Heltec.display->drawString(0, 45, "Last Alarm: " + getTimeFormatted(millis() - _lastLocalAlarmTime));
+
+    Heltec.display->drawString(0, 54, "Uptime: " + getTimeFormatted(millis()));
 
     Heltec.display->display();
   }
